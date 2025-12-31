@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    /* Doom-inspired Dark Theme */
+    --background: 220 13% 9%;
+    --foreground: 60 9% 98%;
+    --card: 220 13% 11%;
+    --card-foreground: 60 9% 98%;
+    --popover: 220 13% 9%;
+    --popover-foreground: 60 9% 98%;
+    --primary: 142 76% 36%;
+    --primary-foreground: 144 76% 96%;
+    --secondary: 25 45% 37%;
+    --secondary-foreground: 60 9% 98%;
+    --muted: 220 13% 16%;
+    --muted-foreground: 60 5% 60%;
+    --accent: 25 45% 37%;
+    --accent-foreground: 60 9% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 60 9% 98%;
+    --border: 220 13% 20%;
+    --input: 220 13% 20%;
+    --ring: 142 76% 36%;
+    --radius: 0.5rem;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+
+  .animate-accordion-down {
+    animation: accordion-down 0.2s ease-out;
+  }
+
+  .animate-accordion-up {
+    animation: accordion-up 0.2s ease-out;
+  }
+
+  /* Markdown styles for README */
+  .prose {
+    max-width: 65ch;
+  }
+
+  .prose-invert {
+    --tw-prose-body: hsl(var(--foreground));
+    --tw-prose-headings: hsl(var(--primary));
+    --tw-prose-links: hsl(var(--primary));
+    --tw-prose-bold: hsl(var(--foreground));
+    --tw-prose-code: hsl(var(--primary));
+    --tw-prose-pre-bg: hsl(var(--muted));
+  }
+
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4,
+  .prose h5,
+  .prose h6 {
+    color: var(--tw-prose-headings);
+    font-weight: 600;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+  }
+
+  .prose p {
+    margin-top: 0.75em;
+    margin-bottom: 0.75em;
+  }
+
+  .prose a {
+    color: var(--tw-prose-links);
+    text-decoration: underline;
+  }
+
+  .prose code {
+    color: var(--tw-prose-code);
+    background-color: hsl(var(--muted));
+    padding: 0.2em 0.4em;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+  }
+
+  .prose pre {
+    background-color: var(--tw-prose-pre-bg);
+    padding: 1em;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+  }
+
+  .prose pre code {
+    background-color: transparent;
+    padding: 0;
+  }
+
+  .prose ul,
+  .prose ol {
+    margin-top: 0.75em;
+    margin-bottom: 0.75em;
+    padding-left: 1.5em;
+  }
+
+  .prose li {
+    margin-top: 0.25em;
+    margin-bottom: 0.25em;
+  }
+}
