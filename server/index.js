@@ -183,6 +183,65 @@ app.post('/api/scan-directory', async (req, res) => {
   }
 });
 
+// API endpoint to expand non-project directory and scan subdirectories
+app.post('/api/expand-directory', async (req, res) => {
+  try {
+    const { rootDirectory, directoryName } = req.body;
+
+    if (!rootDirectory || !directoryName) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    const expandedPath = rootDirectory.replace(/^~/, process.env.HOME || process.env.USERPROFILE);
+    const targetPath = path.join(expandedPath, directoryName);
+
+    if (!(await pathExists(targetPath))) {
+      return res.status(404).json({ error: 'Directory not found' });
+    }
+
+    const entries = await fs.readdir(targetPath, { withFileTypes: true });
+    const directories = entries.filter(entry => entry.isDirectory());
+
+    const results = [];
+
+    for (const dir of directories) {
+      const dirPath = path.join(targetPath, dir.name);
+      const isProj = await isProject(dirPath);
+
+      if (isProj) {
+        const projectInfo = await getProjectInfo(dirPath);
+        results.push({
+          directoryName: dir.name,
+          isProject: true,
+          projectInfo
+        });
+      } else {
+        try {
+          const subEntries = await fs.readdir(dirPath, { withFileTypes: true });
+          const hasSubDirs = subEntries.some(entry => entry.isDirectory());
+
+          results.push({
+            directoryName: dir.name,
+            isProject: false,
+            hasSubDirectories: hasSubDirs
+          });
+        } catch {
+          results.push({
+            directoryName: dir.name,
+            isProject: false,
+            hasSubDirectories: false
+          });
+        }
+      }
+    }
+
+    res.json({ directories: results });
+  } catch (error) {
+    console.error('Error expanding directory:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // API endpoint to read a README file
 app.post('/api/read-readme', async (req, res) => {
   try {
