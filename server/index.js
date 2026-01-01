@@ -48,6 +48,42 @@ async function isProject(dirPath) {
   return await pathExists(path.join(dirPath, 'package.json'));
 }
 
+// Recursively check if directory or any subdirectory contains npm projects
+async function hasNpmProjectsRecursive(dirPath, maxDepth = 3, currentDepth = 0) {
+  // Prevent infinite recursion and very deep searches
+  if (currentDepth >= maxDepth) {
+    return false;
+  }
+
+  // Check if current directory is a project
+  if (await isProject(dirPath)) {
+    return true;
+  }
+
+  // Check subdirectories
+  try {
+    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    const directories = entries.filter(entry => entry.isDirectory());
+
+    for (const dir of directories) {
+      // Skip common non-project directories
+      if (dir.name === 'node_modules' || dir.name === '.git' || dir.name.startsWith('.')) {
+        continue;
+      }
+
+      const subDirPath = path.join(dirPath, dir.name);
+      if (await hasNpmProjectsRecursive(subDirPath, maxDepth, currentDepth + 1)) {
+        return true;
+      }
+    }
+  } catch (error) {
+    // If we can't read the directory, assume it doesn't have projects
+    return false;
+  }
+
+  return false;
+}
+
 // Read node version info from various sources
 async function getNodeVersionInfo(dirPath) {
   const info = {
@@ -146,6 +182,20 @@ app.post('/api/scan-directory', async (req, res) => {
 
     for (const dir of directories) {
       const dirPath = path.join(expandedPath, dir.name);
+
+      // Skip hidden directories and common non-project directories
+      if (dir.name.startsWith('.') || dir.name === 'node_modules') {
+        continue;
+      }
+
+      // Check if this directory or any of its subdirectories contain npm projects
+      const hasProjects = await hasNpmProjectsRecursive(dirPath);
+
+      // Only include if it has npm projects somewhere in the tree
+      if (!hasProjects) {
+        continue;
+      }
+
       const isProj = await isProject(dirPath);
 
       if (isProj) {
@@ -156,10 +206,10 @@ app.post('/api/scan-directory', async (req, res) => {
           projectInfo
         });
       } else {
-        // Check if this directory has subdirectories that might be projects
+        // This directory doesn't have package.json but contains projects in subdirectories
         try {
           const subEntries = await fs.readdir(dirPath, { withFileTypes: true });
-          const hasSubDirs = subEntries.some(entry => entry.isDirectory());
+          const hasSubDirs = subEntries.some(entry => entry.isDirectory() && !entry.name.startsWith('.'));
 
           results.push({
             directoryName: dir.name,
@@ -167,11 +217,8 @@ app.post('/api/scan-directory', async (req, res) => {
             hasSubDirectories: hasSubDirs
           });
         } catch {
-          results.push({
-            directoryName: dir.name,
-            isProject: false,
-            hasSubDirectories: false
-          });
+          // If we can't read it, skip it
+          continue;
         }
       }
     }
@@ -206,6 +253,20 @@ app.post('/api/expand-directory', async (req, res) => {
 
     for (const dir of directories) {
       const dirPath = path.join(targetPath, dir.name);
+
+      // Skip hidden directories and common non-project directories
+      if (dir.name.startsWith('.') || dir.name === 'node_modules') {
+        continue;
+      }
+
+      // Check if this directory or any of its subdirectories contain npm projects
+      const hasProjects = await hasNpmProjectsRecursive(dirPath);
+
+      // Only include if it has npm projects somewhere in the tree
+      if (!hasProjects) {
+        continue;
+      }
+
       const isProj = await isProject(dirPath);
 
       if (isProj) {
@@ -216,9 +277,10 @@ app.post('/api/expand-directory', async (req, res) => {
           projectInfo
         });
       } else {
+        // This directory doesn't have package.json but contains projects in subdirectories
         try {
           const subEntries = await fs.readdir(dirPath, { withFileTypes: true });
-          const hasSubDirs = subEntries.some(entry => entry.isDirectory());
+          const hasSubDirs = subEntries.some(entry => entry.isDirectory() && !entry.name.startsWith('.'));
 
           results.push({
             directoryName: dir.name,
@@ -226,11 +288,8 @@ app.post('/api/expand-directory', async (req, res) => {
             hasSubDirectories: hasSubDirs
           });
         } catch {
-          results.push({
-            directoryName: dir.name,
-            isProject: false,
-            hasSubDirectories: false
-          });
+          // If we can't read it, skip it
+          continue;
         }
       }
     }
